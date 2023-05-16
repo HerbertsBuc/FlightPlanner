@@ -1,7 +1,12 @@
-﻿using FlightPlanner.Models;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using FlightPlanner.Models;
+using FlightPlanner.Services;
 using FlightPlanner.Storage;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace FlightPlanner.Controllers
 {
@@ -9,13 +14,18 @@ namespace FlightPlanner.Controllers
     [ApiController]
     [Authorize]
 
-    public class AdminController : ControllerBase
+    public class AdminController : BaseApiController
     {
+        public AdminController(FlightPlannerDbContext context) : base(context) { }
+
         [HttpGet]
         [Route("flights/{id}")]
         public IActionResult GetFlight(int id)
         {
-            var flight = FlightStorage.GetFlight(id);
+            var flight = _context.Flights
+                .Include(f => f.From)
+                .Include(f => f.To)
+                .SingleOrDefault(f => f.Id == id);
             if (flight == null)
                 return NotFound();
 
@@ -26,19 +36,21 @@ namespace FlightPlanner.Controllers
         [Route("flights")]
         public IActionResult AddFlight(Flight flight)
         {
-            if (FlightStorage.FlightHasNullValues(flight))
-                return BadRequest();
 
-            if (FlightStorage.SameAirport(flight))
+            if (FlightStorage.FlightHasNullValues(flight) ||
+                FlightStorage.SameAirport(flight) ||
+                FlightStorage.ArrivalBeforeDeparture(flight))
+            {
                 return BadRequest();
+            }
 
-            if (FlightStorage.ArrivalBeforeDeparture(flight))
-                return BadRequest();
-
-            if (FlightStorage.FlightExists(flight))
+            if (FlightStorage.FlightExists(_context, flight))
+            {
                 return Conflict();
+            }
 
-            FlightStorage.AddFlight(flight);
+            _context.Flights.Add(flight);
+            _context.SaveChanges();
 
             return Created("", flight);
         }
@@ -47,7 +59,7 @@ namespace FlightPlanner.Controllers
         [Route("flights/{id}")]
         public IActionResult DeleteFlight(int id)
         {
-            FlightStorage.DeleteFlight(id);
+            FlightStorage.DeleteFlight(_context, id);
 
             return Ok();
         }

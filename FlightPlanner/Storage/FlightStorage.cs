@@ -10,69 +10,44 @@ using PageResult = FlightPlanner.Models.PageResult;
 
 namespace FlightPlanner.Storage
 {
-    public static class FlightStorage
+    public class FlightStorage
     {
-        public static List<Flight> _flights = new List<Flight>();
-        private static int _id = 1;
         public static PageResult _pageResult = new PageResult();
-
-        public static Flight GetFlight(int id)
+        public static Flight GetFlight(FlightPlannerDbContext context, int id)
         {
-            lock (_flights)
-            {
-                return _flights.SingleOrDefault(f => f.Id == id);
-            }
+            return context.Flights.SingleOrDefault(f => f.Id == id);
         }
 
-        public static Flight AddFlight(Flight flight)
+        public static Flight AddFlight(FlightPlannerDbContext context, Flight flight)
         {
-            lock (_flights)
-            {
-                flight.Id = _id++;
-                _flights.Add(flight);
-                return flight;
-            }
+            //flight.Id = _id++;
+            context.Flights.Add(flight);
+            return flight;
         }
 
-        public static void DeleteFlights()
+        public static void DeleteFlight(FlightPlannerDbContext context, int id)
         {
-            lock (_flights)
-            {
-                _flights.Clear();
-            }
+            var flight = GetFlight(context, id);
+
+            if (flight != null)
+                context.Flights.Remove(flight);
         }
 
-        public static void DeleteFlight(int id)
+        public static bool FlightExists(FlightPlannerDbContext context, Flight flight)
         {
-            lock (_flights)
+            foreach (Flight f in context.Flights)
             {
-                var flight = GetFlight(id);
-
-                if (flight != null)
-                    _flights.Remove(flight);
-            }
-        }
-
-        public static bool FlightExists(Flight flight)
-        {
-            lock (_flights)
-            {
-                List<Flight> tempFlights = new List<Flight>(_flights);
-
-                foreach (Flight f in tempFlights)
+                if (f.From.AirportCode == flight.From.AirportCode &&
+                    f.From.City == flight.From.City &&
+                    f.From.Country == flight.From.Country &&
+                    f.To.AirportCode == flight.To.AirportCode &&
+                    f.To.City == flight.To.City &&
+                    f.To.Country == flight.To.Country &&
+                    f.Carrier == flight.Carrier &&
+                    f.DepartureTime == flight.DepartureTime &&
+                    f.ArrivalTime == flight.ArrivalTime)
                 {
-                    if (f.From.AirportCode == flight.From.AirportCode &&
-                        f.From.City == flight.From.City &&
-                        f.From.Country == flight.From.Country &&
-                        f.To.AirportCode == flight.To.AirportCode &&
-                        f.To.City == flight.To.City &&
-                        f.To.Country == flight.To.Country &&
-                        f.Carrier == flight.Carrier &&
-                        f.DepartureTime == flight.DepartureTime &&
-                        f.ArrivalTime == flight.ArrivalTime)
-                    {
-                        return true;
-                    }
+                    return true;
                 }
             }
 
@@ -81,61 +56,56 @@ namespace FlightPlanner.Storage
 
         public static bool FlightHasNullValues(Flight flight)
         {
-            lock (_flights)
+            if (flight.From == null || flight.To == null ||
+                string.IsNullOrEmpty(flight.From.AirportCode) ||
+                string.IsNullOrEmpty(flight.From.City) ||
+                string.IsNullOrEmpty(flight.From.Country) ||
+                string.IsNullOrEmpty(flight.To.AirportCode) ||
+                string.IsNullOrEmpty(flight.To.City) ||
+                string.IsNullOrEmpty(flight.To.Country) ||
+                string.IsNullOrEmpty(flight.Carrier) ||
+                string.IsNullOrEmpty(flight.DepartureTime) ||
+                string.IsNullOrEmpty(flight.ArrivalTime))
             {
-                if (flight.From == null || flight.To == null ||
-                    string.IsNullOrEmpty(flight.From.AirportCode) ||
-                    string.IsNullOrEmpty(flight.From.City) ||
-                    string.IsNullOrEmpty(flight.From.Country) ||
-                    string.IsNullOrEmpty(flight.To.AirportCode) ||
-                    string.IsNullOrEmpty(flight.To.City) ||
-                    string.IsNullOrEmpty(flight.To.Country) ||
-                    string.IsNullOrEmpty(flight.Carrier) ||
-                    string.IsNullOrEmpty(flight.DepartureTime) ||
-                    string.IsNullOrEmpty(flight.ArrivalTime))
-                {
-                    return true;
-                }
-
-                return false;
+                return true;
             }
+
+            return false;
         }
 
         public static bool SameAirport(Flight flight)
         {
-            lock (_flights)
-            {
-                if (flight.From == flight.To ||
-                    flight.From.City.ToLower() == flight.To.City.ToLower() ||
-                    flight.From.Country.ToLower() == flight.To.Country.ToLower() ||
-                    flight.From.AirportCode.ToLower() == flight.To.AirportCode.ToLower())
-                {
-                    return true;
-                }
 
-                return false;
+            if (flight.From == flight.To ||
+                flight.From.City.ToLower() == flight.To.City.ToLower() ||
+                flight.From.Country.ToLower() == flight.To.Country.ToLower() ||
+                flight.From.AirportCode.ToLower() == flight.To.AirportCode.ToLower())
+            {
+                return true;
             }
+
+            return false;
+
         }
 
         public static bool ArrivalBeforeDeparture(Flight flight)
         {
-            lock (_flights)
+
+            DateTime departure = DateTime.Parse(flight.DepartureTime);
+            DateTime arrival = DateTime.Parse(flight.ArrivalTime);
+
+            if (departure >= arrival)
             {
-                DateTime departure = DateTime.Parse(flight.DepartureTime);
-                DateTime arrival = DateTime.Parse(flight.ArrivalTime);
-
-                if (departure >= arrival)
-                {
-                    return true;
-                }
-
-                return false;
+                return true;
             }
+
+            return false;
+
         }
 
-        public static List<Airport> SearchAirports(string airport)
+        public static List<Airport> SearchAirports(FlightPlannerDbContext context, string airport)
         {
-            lock (_flights)
+            lock (context.Flights)
             {
                 List<Airport> airports = new List<Airport>();
 
@@ -144,7 +114,7 @@ namespace FlightPlanner.Storage
                     return null;
                 }
 
-                foreach (Flight f in _flights)
+                foreach (Flight f in context.Flights)
                 {
                     if (f.From.Country.ToLower().Contains(airport.Trim().ToLower()) ||
                         f.From.City.ToLower().Contains(airport.Trim().ToLower()) ||
@@ -165,9 +135,9 @@ namespace FlightPlanner.Storage
             }
         }
 
-        public static PageResult SearchFlights(SearchFlightsRequest flight)
+        public static PageResult SearchFlights(FlightPlannerDbContext context, SearchFlightsRequest flight)
         {
-            lock (_flights)
+            lock (context.Flights)
             {
                 _pageResult.Items = new List<Flight>();
                 _pageResult.TotalItems = 0;
@@ -178,7 +148,7 @@ namespace FlightPlanner.Storage
                 if (flight.From == flight.To)
                     return null;
 
-                foreach (Flight f in _flights)
+                foreach (Flight f in context.Flights)
                 {
                     if (f.From.AirportCode == flight.From && f.To.AirportCode == flight.To &&
                         f.DepartureTime.Substring(0, 10) == flight.DepartureDate)
