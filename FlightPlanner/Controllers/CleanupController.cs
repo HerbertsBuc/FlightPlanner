@@ -1,6 +1,7 @@
 ﻿using FlightPlanner.Storage;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace FlightPlanner.Controllers
 {
@@ -8,14 +9,15 @@ namespace FlightPlanner.Controllers
     [ApiController]
     public class CleanupController : BaseApiController
     {
-        public CleanupController(FlightPlannerDbContext context) :base(context) { }
+        private static object Locker = new object();
+        public CleanupController(FlightPlannerDbContext context) : base(context) { }
 
         [HttpPost]
         [Route("clear")]
         public IActionResult Clear()
         {
-            _context.Flights.RemoveRange(_context.Flights);
-            _context.Airports.RemoveRange(_context.Airports);
+            _context.Database.ExecuteSqlRaw("DELETE FROM Flights");
+            _context.Database.ExecuteSqlRaw("DELETE FROM Airports");
             _context.SaveChanges();
 
             return Ok();

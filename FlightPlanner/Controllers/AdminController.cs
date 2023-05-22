@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using FlightPlanner.Models;
-using FlightPlanner.Services;
 using FlightPlanner.Storage;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -16,6 +15,7 @@ namespace FlightPlanner.Controllers
 
     public class AdminController : BaseApiController
     {
+        private static object Locker = new object();
         public AdminController(FlightPlannerDbContext context) : base(context) { }
 
         [HttpGet]
@@ -36,33 +36,45 @@ namespace FlightPlanner.Controllers
         [Route("flights")]
         public IActionResult AddFlight(Flight flight)
         {
-
-            if (FlightStorage.FlightHasNullValues(flight) ||
-                FlightStorage.SameAirport(flight) ||
-                FlightStorage.ArrivalBeforeDeparture(flight))
+            lock (Locker)
             {
-                return BadRequest();
+                if (FlightStorage.FlightHasNullValues(flight))
+                {
+                    return BadRequest();
+                }
+
+                if (FlightStorage.SameAirport(flight))
+                {
+                    return BadRequest();
+                }
+
+                if (FlightStorage.ArrivalBeforeDeparture(flight))
+                {
+                    return BadRequest();
+                }
+
+                if (FlightStorage.FlightExists(_context, flight))
+                {
+                    return Conflict();
+                }
+
+                _context.Flights.Add(flight);
+                _context.SaveChanges();
+
+                return Created("", flight);
             }
-
-            if (FlightStorage.FlightExists(_context, flight))
-            {
-                return Conflict();
-            }
-
-            _context.Flights.Add(flight);
-            _context.SaveChanges();
-
-            return Created("", flight);
         }
 
         [HttpDelete]
         [Route("flights/{id}")]
         public IActionResult DeleteFlight(int id)
         {
-            FlightStorage.DeleteFlight(_context, id);
+            lock (Locker)
+            {
+                FlightStorage.DeleteFlight(_context, id);
 
-            return Ok();
+                return Ok();
+            }
         }
-
     }
 }

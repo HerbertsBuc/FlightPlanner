@@ -5,6 +5,7 @@ using FlightPlanner.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.VisualBasic;
 using PageResult = FlightPlanner.Models.PageResult;
 
@@ -15,43 +16,32 @@ namespace FlightPlanner.Storage
         public static PageResult _pageResult = new PageResult();
         public static Flight GetFlight(FlightPlannerDbContext context, int id)
         {
-            return context.Flights.SingleOrDefault(f => f.Id == id);
+            return context.Flights.Include(f => f.From)
+                .Include(f => f.To).SingleOrDefault(f => f.Id == id);
         }
-
-        public static Flight AddFlight(FlightPlannerDbContext context, Flight flight)
-        {
-            //flight.Id = _id++;
-            context.Flights.Add(flight);
-            return flight;
-        }
-
+        
         public static void DeleteFlight(FlightPlannerDbContext context, int id)
         {
             var flight = GetFlight(context, id);
 
             if (flight != null)
+            {
                 context.Flights.Remove(flight);
+                context.SaveChanges();
+            }
         }
 
         public static bool FlightExists(FlightPlannerDbContext context, Flight flight)
         {
-            foreach (Flight f in context.Flights)
-            {
-                if (f.From.AirportCode == flight.From.AirportCode &&
-                    f.From.City == flight.From.City &&
-                    f.From.Country == flight.From.Country &&
-                    f.To.AirportCode == flight.To.AirportCode &&
-                    f.To.City == flight.To.City &&
-                    f.To.Country == flight.To.Country &&
-                    f.Carrier == flight.Carrier &&
-                    f.DepartureTime == flight.DepartureTime &&
-                    f.ArrivalTime == flight.ArrivalTime)
-                {
-                    return true;
-                }
-            }
-
-            return false;
+            return context.Flights.Any(f => f.From.AirportCode == flight.From.AirportCode &&
+                                            f.From.City == flight.From.City &&
+                                            f.From.Country == flight.From.Country &&
+                                            f.To.AirportCode == flight.To.AirportCode &&
+                                            f.To.City == flight.To.City &&
+                                            f.To.Country == flight.To.Country &&
+                                            f.Carrier == flight.Carrier &&
+                                            f.DepartureTime == flight.DepartureTime &&
+                                            f.ArrivalTime == flight.ArrivalTime);
         }
 
         public static bool FlightHasNullValues(Flight flight)
@@ -75,22 +65,16 @@ namespace FlightPlanner.Storage
 
         public static bool SameAirport(Flight flight)
         {
-
-            if (flight.From == flight.To ||
-                flight.From.City.ToLower() == flight.To.City.ToLower() ||
-                flight.From.Country.ToLower() == flight.To.Country.ToLower() ||
-                flight.From.AirportCode.ToLower() == flight.To.AirportCode.ToLower())
+            if (flight.From.AirportCode.ToLower().Trim() == flight.To.AirportCode.ToLower().Trim())
             {
                 return true;
             }
 
             return false;
-
         }
 
         public static bool ArrivalBeforeDeparture(Flight flight)
         {
-
             DateTime departure = DateTime.Parse(flight.DepartureTime);
             DateTime arrival = DateTime.Parse(flight.ArrivalTime);
 
@@ -100,64 +84,43 @@ namespace FlightPlanner.Storage
             }
 
             return false;
-
         }
 
         public static List<Airport> SearchAirports(FlightPlannerDbContext context, string airport)
         {
-            lock (context.Flights)
+            if (string.IsNullOrEmpty(airport))
             {
-                List<Airport> airports = new List<Airport>();
-
-                if (string.IsNullOrEmpty(airport))
-                {
-                    return null;
-                }
-
-                foreach (Flight f in context.Flights)
-                {
-                    if (f.From.Country.ToLower().Contains(airport.Trim().ToLower()) ||
-                        f.From.City.ToLower().Contains(airport.Trim().ToLower()) ||
-                        f.From.AirportCode.ToLower().Contains(airport.Trim().ToLower()))
-                    {
-                        airports.Add(f.From);
-                    }
-
-                    if (f.To.Country.ToLower().Contains(airport.Trim().ToLower()) ||
-                        f.To.City.ToLower().Contains(airport.Trim().ToLower()) ||
-                        f.To.AirportCode.ToLower().Contains(airport.Trim().ToLower()))
-                    {
-                        airports.Add(f.To);
-                    }
-                }
-
-                return airports;
+                return null;
             }
+
+            var airports = from f in context.Airports
+                           where (f.Country.ToLower().Contains(airport.Trim().ToLower()) ||
+                                  f.City.ToLower().Contains(airport.Trim().ToLower()) ||
+                                  f.AirportCode.ToLower().Contains(airport.Trim().ToLower()))
+                           select f;
+
+            return airports.ToList();
+
         }
 
         public static PageResult SearchFlights(FlightPlannerDbContext context, SearchFlightsRequest flight)
         {
-            lock (context.Flights)
-            {
-                _pageResult.Items = new List<Flight>();
-                _pageResult.TotalItems = 0;
+            _pageResult.Items = new List<Flight>();
+            _pageResult.TotalItems = 0;
 
-                if (flight.From == null || flight.To == null || flight.DepartureDate == null)
-                    return null;
+            if (flight.From == null || flight.To == null || flight.DepartureDate == null)
+                return null;
 
-                if (flight.From == flight.To)
-                    return null;
+            if (flight.From == flight.To)
+                return null;
 
-                foreach (Flight f in context.Flights)
-                {
-                    if (f.From.AirportCode == flight.From && f.To.AirportCode == flight.To &&
-                        f.DepartureTime.Substring(0, 10) == flight.DepartureDate)
-                    {
-                        _pageResult.TotalItems++;
-                        _pageResult.Items.Add(f);
-                    }
-                }
-            }
+            _pageResult.Items = (from f in context.Flights
+                                 where (f.From.AirportCode == flight.From && f.To.AirportCode == flight.To &&
+                                        f.DepartureTime.Substring(0, 10) == flight.DepartureDate)
+                                 select f).ToList();
+
+            if (_pageResult.Items.Count != 0)
+                _pageResult.TotalItems++;
 
             return _pageResult;
         }

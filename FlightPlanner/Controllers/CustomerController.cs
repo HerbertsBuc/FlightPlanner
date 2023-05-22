@@ -9,6 +9,7 @@ namespace FlightPlanner.Controllers
     [ApiController]
     public class CustomerController : BaseApiController
     {
+
         public CustomerController(FlightPlannerDbContext context) : base(context) { }
 
         [HttpGet]
@@ -23,7 +24,7 @@ namespace FlightPlanner.Controllers
         public IActionResult SearchFlights(SearchFlightsRequest flight)
         {
             var results = FlightStorage.SearchFlights(_context, flight);
-            
+
             if (results == null)
                 return BadRequest();
 
