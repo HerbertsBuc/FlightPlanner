@@ -11,6 +11,8 @@ namespace FlightPlanner.Controllers
 
     public class AdminController : ControllerBase
     {
+        private static object Locker = new object();
+
         [HttpGet]
         [Route("flights/{id}")]
         public IActionResult GetFlight(int id)
@@ -26,31 +28,36 @@ namespace FlightPlanner.Controllers
         [Route("flights")]
         public IActionResult AddFlight(Flight flight)
         {
-            if (FlightStorage.FlightHasNullValues(flight))
-                return BadRequest();
+            lock (Locker)
+            {
+                if (FlightStorage.FlightHasNullValues(flight))
+                    return BadRequest();
 
-            if (FlightStorage.SameAirport(flight))
-                return BadRequest();
+                if (FlightStorage.SameAirport(flight))
+                    return BadRequest();
 
-            if (FlightStorage.ArrivalBeforeDeparture(flight))
-                return BadRequest();
+                if (FlightStorage.ArrivalBeforeDeparture(flight))
+                    return BadRequest();
 
-            if (FlightStorage.FlightExists(flight))
-                return Conflict();
+                if (FlightStorage.FlightExists(flight))
+                    return Conflict();
 
-            FlightStorage.AddFlight(flight);
+                FlightStorage.AddFlight(flight);
 
-            return Created("", flight);
+                return Created("", flight);
+            }
         }
 
         [HttpDelete]
         [Route("flights/{id}")]
         public IActionResult DeleteFlight(int id)
         {
-            FlightStorage.DeleteFlight(id);
+            lock (Locker)
+            {
+                FlightStorage.DeleteFlight(id);
 
-            return Ok();
+                return Ok();
+            }
         }
-
     }
 }
