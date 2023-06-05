@@ -14,33 +14,21 @@ namespace FlightPlanner.Services
         public AirportService(IFlightPlannerDbContext context) : base(context)
         {
         }
-        public List<Airport> SearchAirports(string airport)
+        public List<Airport> SearchAirports(string phrase)
         {
-            List<Airport> airports = new List<Airport>();
-
-            if (string.IsNullOrEmpty(airport))
+            if (string.IsNullOrEmpty(phrase))
             {
                 return null;
             }
 
-            foreach (Flight f in _context.Flights)
-            {
-                if (f.From.Country.ToLower().Contains(airport.Trim().ToLower()) ||
-                    f.From.City.ToLower().Contains(airport.Trim().ToLower()) ||
-                    f.From.AirportCode.ToLower().Contains(airport.Trim().ToLower()))
-                {
-                    airports.Add(f.From);
-                }
+            var airports = from f in _context.Airports
+                where f.Country.ToLower().Contains(phrase.Trim().ToLower()) ||
+                       f.City.ToLower().Contains(phrase.Trim().ToLower()) ||
+                       f.AirportCode.ToLower().Contains(phrase.Trim().ToLower())
+                select f;
 
-                if (f.To.Country.ToLower().Contains(airport.Trim().ToLower()) ||
-                    f.To.City.ToLower().Contains(airport.Trim().ToLower()) ||
-                    f.To.AirportCode.ToLower().Contains(airport.Trim().ToLower()))
-                {
-                    airports.Add(f.To);
-                }
-            }
 
-            return airports;
+            return airports.ToList();
         }
     }
 }
