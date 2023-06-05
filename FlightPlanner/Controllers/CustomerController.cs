@@ -1,6 +1,5 @@
-﻿using FlightPlanner.Models;
-using FlightPlanner.Storage;
-using Microsoft.AspNetCore.Http;
+﻿using FlightPlanner.Data;
+using FlightPlanner.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FlightPlanner.Controllers
@@ -9,37 +8,40 @@ namespace FlightPlanner.Controllers
     [ApiController]
     public class CustomerController : BaseApiController
     {
-
-        public CustomerController(FlightPlannerDbContext context) : base(context) { }
+        private readonly IFlightPlannerDbContext _context;
+        public CustomerController(IFlightPlannerDbContext context)
+        {
+            _context = context;
+        }
 
         [HttpGet]
         [Route("airports")]
         public IActionResult SearchAirports(string search)
         {
-            return Ok(FlightStorage.SearchAirports(_context, search));
+            return Ok(); //FlightStorage.SearchAirports(_context, search));
         }
 
         [HttpPost]
         [Route("flights/search")]
         public IActionResult SearchFlights(SearchFlightsRequest flight)
         {
-            var results = FlightStorage.SearchFlights(_context, flight);
+           // var results = FlightStorage.SearchFlights(_context, flight);
 
-            if (results == null)
-                return BadRequest();
+           // if (results == null)
+             //   return BadRequest();
 
-            return Ok(results);
+            return Ok();
         }
 
         [HttpGet]
         [Route("flights/{id}")]
         public IActionResult FindFlightById(int id)
         {
-            var flight = FlightStorage.GetFlight(_context, id);
-            if (flight == null)
-                return NotFound();
+          //  var flight = FlightStorage.GetFlight(_context, id);
+          //  if (flight == null)
+           //     return NotFound();
 
-            return Ok(flight);
+            return Ok();
         }
     }
 }

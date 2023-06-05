@@ -1,11 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
+using AutoMapper;
+using FlightPlanner.Core.Services;
+using FlightPlanner.Core.Validations;
 using FlightPlanner.Models;
-using FlightPlanner.Storage;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace FlightPlanner.Controllers
 {
@@ -15,53 +15,46 @@ namespace FlightPlanner.Controllers
 
     public class AdminController : BaseApiController
     {
+        private readonly IFlightService _flightService;
         private static object Locker = new object();
-        public AdminController(FlightPlannerDbContext context) : base(context) { }
+        private readonly IMapper _mapper;
+        private readonly IEnumerable<IValidate> _validators;
+
+        public AdminController(IFlightService flightService, IMapper mapper, IEnumerable<IValidate> validators)
+        {
+            _flightService = flightService;
+            _mapper = mapper;
+            _validators = validators;
+        }
 
         [HttpGet]
         [Route("flights/{id}")]
         public IActionResult GetFlight(int id)
         {
-            var flight = _context.Flights
-                .Include(f => f.From)
-                .Include(f => f.To)
-                .SingleOrDefault(f => f.Id == id);
+            var flight = _flightService.GetFullFlight(id);
             if (flight == null)
-                return NotFound();
+                return NotFound(); 
 
-            return Ok(flight);
+            return Ok(_mapper.Map<AddFlightRequest>(flight));
         }
 
         [HttpPut]
         [Route("flights")]
-        public IActionResult AddFlight(Flight flight)
+        public IActionResult AddFlight(AddFlightRequest request)
         {
             lock (Locker)
             {
-                if (FlightStorage.FlightHasNullValues(flight))
-                {
-                    return BadRequest();
-                }
+                var flight = _mapper.Map<Flight>(request);
 
-                if (FlightStorage.SameAirport(flight))
-                {
+                if (!_validators.All(validator => validator.IsValid(flight)))
                     return BadRequest();
-                }
 
-                if (FlightStorage.ArrivalBeforeDeparture(flight))
-                {
-                    return BadRequest();
-                }
-
-                if (FlightStorage.FlightExists(_context, flight))
-                {
+                if (_flightService.FlightExists(flight))
                     return Conflict();
-                }
 
-                _context.Flights.Add(flight);
-                _context.SaveChanges();
+                _flightService.Create(flight);
 
-                return Created("", flight);
+                return Created("", _mapper.Map<AddFlightRequest>(flight));
             }
         }
 
@@ -71,7 +64,10 @@ namespace FlightPlanner.Controllers
         {
             lock (Locker)
             {
-                FlightStorage.DeleteFlight(_context, id);
+                var flight = _flightService.GetFullFlight(id);
+                
+                if (flight != null)
+                    _flightService.Delete(flight);
 
                 return Ok();
             }

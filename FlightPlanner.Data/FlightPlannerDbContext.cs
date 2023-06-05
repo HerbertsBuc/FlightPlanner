@@ -1,13 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using FlightPlanner.Models;
+﻿using FlightPlanner.Models;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Cryptography;
+using FlightPlanner.Data;
 
 namespace FlightPlanner
 {
-    public class FlightPlannerDbContext : DbContext
+    public class FlightPlannerDbContext : DbContext, IFlightPlannerDbContext
     {
         public FlightPlannerDbContext(DbContextOptions options) :base(options)
         {
