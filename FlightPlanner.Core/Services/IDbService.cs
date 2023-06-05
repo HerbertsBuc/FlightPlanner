@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using FlightPlanner.Core.Models;
 
-namespace FlightPlanner.Core.Services 
+namespace FlightPlanner.Core.Services
 {
     public interface IDbService
     {
@@ -12,4 +12,3 @@ namespace FlightPlanner.Core.Services
         public List<T> GetAll<T>() where T : Entity;
     }
 }
- 

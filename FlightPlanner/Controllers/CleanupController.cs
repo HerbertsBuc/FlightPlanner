@@ -5,13 +5,13 @@ namespace FlightPlanner.Controllers
 {
     [Route("testing-api")]
     [ApiController]
-    public class CleanupController : BaseApiController
+    public class CleanupController : ControllerBase
     {
-        
+
         private readonly IFlightPlannerDbContext _context;
 
         public CleanupController(IFlightPlannerDbContext context)
-        { 
+        {
             _context = context;
         }
 

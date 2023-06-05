@@ -13,7 +13,7 @@ namespace FlightPlanner.Services
             services.AddScoped<IValidate, FlightValidator>();
             services.AddScoped<IValidate, FlightCarrierValidator>();
             services.AddScoped<IValidate, FlightTimesValidator>();
-            services.AddScoped<IValidate, AirportValidator>(); 
+            services.AddScoped<IValidate, AirportValidator>();
             services.AddScoped<IValidate, AirportPropsValidator>();
             services.AddScoped<IValidate, FlightTimesIntervalValidator>();
             services.AddScoped<IValidate, FlightAirportValidator>();

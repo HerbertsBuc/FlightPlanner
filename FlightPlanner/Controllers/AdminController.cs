@@ -13,7 +13,7 @@ namespace FlightPlanner.Controllers
     [ApiController]
     [Authorize]
 
-    public class AdminController : BaseApiController
+    public class AdminController : ControllerBase
     {
         private readonly IFlightService _flightService;
         private static object Locker = new object();
@@ -32,8 +32,9 @@ namespace FlightPlanner.Controllers
         public IActionResult GetFlight(int id)
         {
             var flight = _flightService.GetFullFlight(id);
+
             if (flight == null)
-                return NotFound(); 
+                return NotFound();
 
             return Ok(_mapper.Map<AddFlightRequest>(flight));
         }
@@ -65,7 +66,7 @@ namespace FlightPlanner.Controllers
             lock (Locker)
             {
                 var flight = _flightService.GetFullFlight(id);
-                
+
                 if (flight != null)
                     _flightService.Delete(flight);
 

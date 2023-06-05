@@ -2,16 +2,14 @@
 using System.Linq;
 using AutoMapper;
 using FlightPlanner.Core.Services;
-using FlightPlanner.Data;
 using FlightPlanner.Models;
-using FlightPlanner.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FlightPlanner.Controllers
 {
     [Route("api")]
     [ApiController]
-    public class CustomerController : BaseApiController
+    public class CustomerController : ControllerBase
     {
         private readonly IFlightService _flightService;
         private readonly IAirportService _airportService;
@@ -23,7 +21,7 @@ namespace FlightPlanner.Controllers
             _airportService = airportService;
             _mapper = mapper;
             _searchFlightService = searchFlightService;
-            _flightService = flightService; 
+            _flightService = flightService;
         }
 
         [HttpGet]
@@ -31,6 +29,7 @@ namespace FlightPlanner.Controllers
         public IActionResult SearchAirports(string search)
         {
             var airports = _airportService.SearchAirports(search);
+
             List<AddAirportRequest> returnAirports = new List<AddAirportRequest>();
 
             foreach (Airport a in airports)

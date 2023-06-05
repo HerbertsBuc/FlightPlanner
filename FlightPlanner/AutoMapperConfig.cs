@@ -10,10 +10,10 @@ namespace FlightPlanner
             var config = new MapperConfiguration(cfg =>
                 {
                     cfg.CreateMap<AddAirportRequest, Airport>()
-                        .ForMember(d => d.AirportCode, 
+                        .ForMember(d => d.AirportCode,
                             opt => opt
                             .MapFrom(s => s.Airport))
-                        .ForMember(d => d.Id, 
+                        .ForMember(d => d.Id,
                             opt => opt.Ignore());
                     cfg.CreateMap<Airport, AddAirportRequest>()
                         .ForMember(d => d.Airport,
@@ -24,7 +24,6 @@ namespace FlightPlanner
                             .MapFrom(s => s.AirportCode));
                     cfg.CreateMap<AddFlightRequest, Flight>();
                     cfg.CreateMap<Flight, AddFlightRequest>();
-
                 }
             );
 

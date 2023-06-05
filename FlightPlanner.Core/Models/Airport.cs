@@ -1,5 +1,4 @@
-﻿using System.Text.Json.Serialization;
-using FlightPlanner.Core.Models;
+﻿using FlightPlanner.Core.Models;
 
 namespace FlightPlanner.Models
 {

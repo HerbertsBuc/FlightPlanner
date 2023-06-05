@@ -8,8 +8,8 @@ using Microsoft.EntityFrameworkCore;
 namespace FlightPlanner.Services
 {
     public class DbService : IDbService
-    { 
-        protected readonly IFlightPlannerDbContext _context; 
+    {
+        protected readonly IFlightPlannerDbContext _context;
 
         public DbService(IFlightPlannerDbContext context)
         {
@@ -23,7 +23,7 @@ namespace FlightPlanner.Services
             return entity;
         }
 
-        public void Delete<T>(T entity) where T : Entity 
+        public void Delete<T>(T entity) where T : Entity
         {
             _context.Set<T>().Remove(entity);
             _context.SaveChanges();
@@ -31,7 +31,7 @@ namespace FlightPlanner.Services
 
         public List<T> GetAll<T>() where T : Entity
         {
-            return _context.Set<T>().ToList(); 
+            return _context.Set<T>().ToList();
         }
 
         public T GetById<T>(int id) where T : Entity

@@ -14,4 +14,3 @@ namespace FlightPlanner.Data
         public int SaveChanges();
     }
 }
- 

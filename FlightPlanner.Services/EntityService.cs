@@ -34,6 +34,6 @@ namespace FlightPlanner.Services
         public void Update(T entity)
         {
             Update<T>(entity);
-        } 
+        }
     }
 }
