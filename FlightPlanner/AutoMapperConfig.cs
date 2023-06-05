@@ -24,6 +24,7 @@ namespace FlightPlanner
                             .MapFrom(s => s.AirportCode));
                     cfg.CreateMap<AddFlightRequest, Flight>();
                     cfg.CreateMap<Flight, AddFlightRequest>();
+
                 }
             );
 

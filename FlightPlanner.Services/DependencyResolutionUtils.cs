@@ -26,6 +26,7 @@ namespace FlightPlanner.Services
             services.AddScoped<IEntityService<Airport>, EntityService<Airport>>();
             services.AddScoped<IFlightService, FlightService>();
             services.AddScoped<IAirportService, AirportService>();
+            services.AddScoped<ISearchFlightService, SearchFlightService>();
         }
     }
 }
