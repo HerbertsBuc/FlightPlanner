@@ -1,4 +1,4 @@
-﻿using FlightPlanner.Data;
+using FlightPlanner.Data;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FlightPlanner.Controllers
