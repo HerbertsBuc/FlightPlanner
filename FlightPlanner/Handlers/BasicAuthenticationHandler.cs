@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text;
@@ -18,8 +18,8 @@ namespace FlightPlanner.Handlers
             IOptionsMonitor<AuthenticationSchemeOptions> options,
             ILoggerFactory logger,
             UrlEncoder encoder,
-            ISystemClock clock) : base(options, logger, encoder, clock) {}
-        
+            ISystemClock clock) : base(options, logger, encoder, clock) { }
+
 
         protected override Task<AuthenticateResult> HandleAuthenticateAsync()
         {
@@ -62,7 +62,7 @@ namespace FlightPlanner.Handlers
             return Task.FromResult(AuthenticateResult.Success(ticket));
         }
 
-        
+
 
     }
 }
